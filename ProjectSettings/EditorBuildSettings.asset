@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/StrategistFolder_Scenes/Smapie.unity
+    guid: 2297bdae9326fbe4cb3c5ba42ab7be36
   m_configObjects: {}
