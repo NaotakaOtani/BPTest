@@ -10,6 +10,15 @@ public class Master : MonoBehaviour
     // 盤Size（8x8）
     const int boardSize = 8;
 
+    // ブロック生成位置
+    public Transform[] Frame;
+    // ブロック用配列
+    public Transform[] Blocks;
+    // 乱数
+    int ran;
+    // GenerationPosition
+    GenerationPosition gp;
+    
     // Ray
     Ray ray;
     // Rayのアタリ判定
@@ -32,6 +41,8 @@ public class Master : MonoBehaviour
                 board[y].Add(false);
             }
         }
+
+        generate();
     }
 
     // Update is called once per frame
@@ -53,6 +64,35 @@ public class Master : MonoBehaviour
         if (hitRay)
         {
             movement();
+        }
+    }
+
+    /// <summary>
+    /// ブロックを３個生成する
+    /// </summary>
+    private void generate()
+    {
+        // ブロックの生成
+        for (int i = 0; i < 3; i++)
+        {            
+            ran = Random.Range(0, Blocks.Length);
+            
+            // Center座標を求める
+            Vector3 BlockCenterPos = GameObject.Find("GameMaster").GetComponent<GenerationPosition>().GetCenterPosition(Blocks[ran]);
+
+            // humanをどれだけ動かすと、Pivotの位置にCenterを持ってこられるか求める
+            Vector3 centerDis = Blocks[ran].position - BlockCenterPos;
+
+            // frameの座標と、humanのPivotとCenterの位置の差を足せば完了
+            Blocks[ran].position = Frame[i].position + centerDis;
+
+            // 求めた座標をそれぞれ代入
+            float x = Blocks[ran].position.x;
+            float y = Blocks[ran].position.y;
+            float z = 0;
+
+            // ブロックを生成
+            Instantiate(Blocks[ran].gameObject, new Vector3(x, y, z), transform.rotation);
         }
     }
 
@@ -142,7 +182,7 @@ public class Master : MonoBehaviour
             }
 
             // 親Objectを削除する（Destroyは即時反映されない）
-            DestroyImmediate(this.gameObject);
+            DestroyImmediate(hitBlock.collider.gameObject);
         }
         else
         {
