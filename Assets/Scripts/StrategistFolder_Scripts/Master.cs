@@ -10,21 +10,28 @@ public class Master : MonoBehaviour
     // 盤Size（8x8）
     const int boardSize = 8;
 
+    // ブロックズ
+    //List<List<bool>> blocks = new List<List<bool>>();
+    List<bool[,]> blocks = new List<bool[,]>();
+
     // ブロック生成位置
     public Transform[] Frame;
     // ブロック用配列
     public Transform[] Blocks;
     // 乱数
     int ran;
-    // GenerationPosition
-    GenerationPosition gp;
+    // 使用済みブロック数
+    int alreadyUsedCount = 0;
+
+    // 盤の局面取得フラグ
+    int emptyCheck = 0;
     
     // Ray
     Ray ray;
     // Rayのアタリ判定
     private bool hitRay = false;
     // Rayによって取得した情報を保存する構造体
-    private RaycastHit hitBlock, hitBoard;
+    private RaycastHit hitBlock, hitBoard, hitObject;
     private RaycastHit[] hitObjects;
     // ブロックの初期位置の保存用
     private Vector3 initialPosition;
@@ -42,13 +49,63 @@ public class Master : MonoBehaviour
             }
         }
 
+        // 各ブロックの場所を用意 (1マスブロックを除く)
+        for (int i = 0; i < 29; i++)
+        {
+            if (i == 0)
+            {
+                blockInfomation(2, 1);
+            }
+            else if (i == 1)
+            {
+                blockInfomation(1, 2);
+            }
+            else if (i == 2)
+            {
+                blockInfomation(3, 1);
+            }
+            else if (i == 3)
+            {
+                blockInfomation(1, 3);
+            }
+            else if (i == 4)
+            {
+                blockInfomation(4, 1);
+            }
+            else if (i == 5)
+            {
+                blockInfomation(1, 4);
+            }
+            else if (i == 6 || i == 17 || i == 18 || i == 19 || i == 20)
+            {
+                blockInfomation(2, 2);
+            }
+            else if (i == 7 || i == 8)
+            {
+                blockInfomation(3, 3);
+            }
+            else if (i == 9 || i == 11 || i == 13 || i == 15 || i == 21 || i == 23 || i == 25 || i == 27)
+            {
+                blockInfomation(3, 2);
+            }
+            else if (i == 10 || i == 12 || i == 14 || i == 16 || i == 22 || i == 24 || i == 26 || i == 28)
+            {
+                blockInfomation(2, 3);
+            }
+        }
+
         generate();
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        if (emptyCheck == 1)
+        {
+            boardSituation();
+            emptyCheck = 0;
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             check();
@@ -65,6 +122,11 @@ public class Master : MonoBehaviour
         {
             movement();
         }
+        if (alreadyUsedCount >= 3)
+        {
+            generate();
+            alreadyUsedCount = 0;
+        }
     }
 
     /// <summary>
@@ -75,11 +137,12 @@ public class Master : MonoBehaviour
         // ブロックの生成
         for (int i = 0; i < 3; i++)
         {            
+            // 乱数生成
             ran = Random.Range(0, Blocks.Length);
-            
-            // Center座標を求める
-            Vector3 BlockCenterPos = GameObject.Find("GameMaster").GetComponent<GenerationPosition>().GetCenterPosition(Blocks[ran]);
 
+            // Center座標を求める
+            Vector3 BlockCenterPos = GetCenterPosition(Blocks[ran]);
+            
             // humanをどれだけ動かすと、Pivotの位置にCenterを持ってこられるか求める
             Vector3 centerDis = Blocks[ran].position - BlockCenterPos;
 
@@ -88,12 +151,93 @@ public class Master : MonoBehaviour
 
             // 求めた座標をそれぞれ代入
             float x = Blocks[ran].position.x;
-            float y = Blocks[ran].position.y;
-            float z = 0;
-
+            float y = 0;          
+            float z = Blocks[ran].position.z;
             // ブロックを生成
             Instantiate(Blocks[ran].gameObject, new Vector3(x, y, z), transform.rotation);
         }
+    }
+
+    /// <summary>
+    /// ブロックの中心を求める
+    /// </summary>  
+    public Vector3 GetCenterPosition(Transform target)
+    {
+        //非アクティブも含めて、targetとtargetの子全てのレンダラーとコライダーを取得
+        // ある方を使う。
+        Collider[] cols = target.GetComponentsInChildren<Collider>(true);
+        Renderer[] rens = target.GetComponentsInChildren<Renderer>(true);
+
+        //コライダーとレンダラーが１つもなければ、target.positionがcenterになる　↓の計算式
+        if (cols.Length == 0 && rens.Length == 0)
+        {
+            return target.position;
+        }
+
+        bool isInit = false;
+
+        // min(始点) max(終点) 対角線
+        Vector3 minPos = Vector3.zero;
+        Vector3 maxPos = Vector3.zero;
+
+        for (int i = 0; i < cols.Length; i++)
+        {
+            var bounds = cols[i].bounds;
+            var center = bounds.center;
+            var size = bounds.size / 2;
+
+            //最初の１度だけ通って、minPosとmaxPosを初期化する
+            if (!isInit)
+            {
+                minPos.x = center.x - size.x;
+                minPos.y = center.y - size.y;
+                minPos.z = center.z - size.z;
+                maxPos.x = center.x + size.x;
+                maxPos.y = center.y + size.y;
+                maxPos.z = center.z + size.z;
+
+                isInit = true;
+                continue;
+            }
+
+            if (minPos.x > center.x - size.x) minPos.x = center.x - size.x;
+            if (minPos.y > center.y - size.y) minPos.y = center.y - size.y;
+            if (minPos.z > center.z - size.z) minPos.z = center.z - size.z;
+            if (maxPos.x < center.x + size.x) maxPos.x = center.x + size.x;
+            if (maxPos.y < center.y + size.y) maxPos.y = center.y + size.y;
+            if (maxPos.z < center.z + size.z) maxPos.z = center.z + size.z;
+        }
+
+        for (int i = 0; i < rens.Length; i++)
+        {
+            var bounds = rens[i].bounds;
+            var center = bounds.center;
+            var size = bounds.size / 2;
+
+            //コライダーが１つもなければ１度だけ通って、minPosとmaxPosを初期化する
+            if (!isInit)
+            {
+                minPos.x = center.x - size.x;
+                minPos.y = center.y - size.y;
+                minPos.z = center.z - size.z;
+                maxPos.x = center.x + size.x;
+                maxPos.y = center.y + size.y;
+                maxPos.z = center.z + size.z;
+
+                isInit = true;
+                continue;
+            }
+
+            if (minPos.x > center.x - size.x) minPos.x = center.x - size.x;
+            if (minPos.y > center.y - size.y) minPos.y = center.y - size.y;
+            if (minPos.z > center.z - size.z) minPos.z = center.z - size.z;
+            if (maxPos.x < center.x + size.x) maxPos.x = center.x + size.x;
+            if (maxPos.y < center.y + size.y) maxPos.y = center.y + size.y;
+            if (maxPos.z < center.z + size.z) maxPos.z = center.z + size.z;
+        }
+        
+        // 対角線の中心
+        return (minPos + maxPos) / 2;
     }
 
     /// <summary>
@@ -171,6 +315,8 @@ public class Master : MonoBehaviour
             {
                 // 盤ObjectのX,Z座標をブロックパーツに代入。Y座標を後付け。
                 hitBlock.collider.gameObject.transform.position = hitBoard.collider.gameObject.transform.position + new Vector3(0, 1, 0);
+                alreadyUsedCount++;
+                emptyCheck = 1;
             }
 
             foreach (Transform ct in childTransforms)
@@ -206,6 +352,7 @@ public class Master : MonoBehaviour
             Debug.DrawRay(ray.origin, ray.direction * 10, Color.green, 5);
             
             hitObjects = Physics.RaycastAll(ray.origin, ray.direction, 10.0f);
+            
             // 1列揃っているなら
             if (hitObjects.Length == 8)
             {
@@ -250,5 +397,42 @@ public class Master : MonoBehaviour
         hitBlock.collider.gameObject.transform.position = screenPos;
     }
 
+    /// <summary>
+    /// 盤面の状況を取得する
+    /// </summary>
+    private void boardSituation()
+    {
+        int x = 0;
+        int z = 0;
+        ray = new Ray(new Vector3(0.5f, 1.1f, 0.5f), Vector3.forward);
 
+        for (float f = 0.5f; f < 8; f++)
+        {
+            for (float g = 0.5f; g < 8; g++)
+            {
+                ray = new Ray(new Vector3(g, 1.1f, f), new Vector3(0, -1, 0));
+                Physics.Raycast(ray.origin, ray.direction, out hitObject, 5.0f);
+                Debug.DrawRay(ray.origin, ray.direction * 2, Color.gray, 5);
+
+                if (hitObject.collider.gameObject.tag == "Parts")
+                {
+                    board[z][x] = true;
+                    Debug.Log(z + ":" + x + " " + board[z][x]);
+                }               
+
+                x++;
+            }
+            x = 0;
+            z++;
+
+        }
+    }
+
+    /// <summary>
+    /// 各ブロック情報 初期値
+    /// </summary>
+    private void blockInfomation(int x, int z)
+    {
+        blocks.Add(new bool[x, z]);
+    }
 }
