@@ -216,7 +216,7 @@ public class Master : MonoBehaviour
             initialPosition = hitBlock.collider.gameObject.transform.position;
 
             // ブロックの拡大
-            hitBlock.collider.gameObject.transform.localScale = new Vector3(2, 1, 2);
+            hitBlock.collider.gameObject.transform.localScale = new Vector3(1, 1, 1);
         }
         // 可視光線（始点：Main Camera、色：赤）
         Debug.DrawRay(ray.origin, ray.direction * 20, Color.red, 5);
@@ -293,7 +293,7 @@ public class Master : MonoBehaviour
         else
         {
             // 縮小
-            hitBlock.collider.gameObject.transform.localScale = new Vector3(1, 1, 1);
+            hitBlock.collider.gameObject.transform.localScale = new Vector3(0.5f, 1, 0.5f);
             // 初期位置に戻す
             hitBlock.collider.gameObject.transform.position = initialPosition;
         }
