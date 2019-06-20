@@ -51,50 +51,8 @@ public class Master : MonoBehaviour
             }
         }
 
-        // 各ブロックの場所を用意 (1マスブロックを除く)
-        for (int i = 0; i < 29; i++)
-        {
-            if (i == 0)
-            {
-                blockInfomation(2, 1);
-            }
-            else if (i == 1)
-            {
-                blockInfomation(1, 2);
-            }
-            else if (i == 2)
-            {
-                blockInfomation(3, 1);
-            }
-            else if (i == 3)
-            {
-                blockInfomation(1, 3);
-            }
-            else if (i == 4)
-            {
-                blockInfomation(4, 1);
-            }
-            else if (i == 5)
-            {
-                blockInfomation(1, 4);
-            }
-            else if (i == 6 || i == 17 || i == 18 || i == 19 || i == 20)
-            {
-                blockInfomation(2, 2);
-            }
-            else if (i == 7 || i == 8)
-            {
-                blockInfomation(3, 3);
-            }
-            else if (i == 9 || i == 11 || i == 13 || i == 15 || i == 21 || i == 23 || i == 25 || i == 27)
-            {
-                blockInfomation(3, 2);
-            }
-            else if (i == 10 || i == 12 || i == 14 || i == 16 || i == 22 || i == 24 || i == 26 || i == 28)
-            {
-                blockInfomation(2, 3);
-            }
-        }
+        
+        blockInfomation();
 
         generate();
     }
@@ -433,8 +391,8 @@ public class Master : MonoBehaviour
     /// <summary>
     /// 各ブロック情報 初期値
     /// </summary>
-    private void blockInfomation(int x, int z)
+    private void blockInfomation()
     {
-        blocks.Add(new bool[x, z]);
+       
     }
 }
