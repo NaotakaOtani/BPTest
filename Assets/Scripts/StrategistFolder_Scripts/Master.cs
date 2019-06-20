@@ -27,6 +27,8 @@ public class Master : MonoBehaviour
 
     // 盤の局面取得フラグ
     int emptyCheck = 0;
+    // ブロックを置いたか
+    int putCheck = 0;
     
     // Ray
     Ray ray;
@@ -34,9 +36,12 @@ public class Master : MonoBehaviour
     private bool hitRay = false;
     // Rayによって取得した情報を保存する構造体
     private RaycastHit hitBlock, hitBoard, hitObject;
-    private RaycastHit[] hitObjects;
+    private RaycastHit[] hitObjects, hitObjectsX, hitObjectsZ;
     // ブロックの初期位置の保存用
     private Vector3 initialPosition;
+
+    // Layer(Board)
+    private int boardLayerIndex;
 
     // Start is called before the first frame update
     void Start()
@@ -76,7 +81,11 @@ public class Master : MonoBehaviour
 
             hitRay = false;
 
-            delete();
+            if (putCheck == 1)
+            {
+                delete();
+            }
+            
         }
         if (hitRay)
         {
@@ -242,7 +251,7 @@ public class Master : MonoBehaviour
             // 衝突したObjectを全取得する
             hitObjects = Physics.RaycastAll(ray.origin, ray.direction, 5.0f);
             // Layer：10
-            int boardLayerIndex = LayerMask.NameToLayer("Board");
+            boardLayerIndex = LayerMask.NameToLayer("Board");
 
             
 
@@ -289,6 +298,9 @@ public class Master : MonoBehaviour
 
             // 親Objectを削除する（Destroyは即時反映されない）
             DestroyImmediate(hitBlock.collider.gameObject);
+
+            putCheck = 1;
+
         }
         else
         {
@@ -304,41 +316,44 @@ public class Master : MonoBehaviour
     /// </summary>
     private void delete()
     {
-        // Z軸方向
+        // ↑方向
         for (int x = 0; x < 8; x++)
         {
             ray = new Ray(new Vector3(0.5f + x, 0.5f, -1), new Vector3(0, 0, 1));
             // 可視光線（始点：盤の下列、色：緑）
             Debug.DrawRay(ray.origin, ray.direction * 10, Color.green, 5);
             
-            hitObjects = Physics.RaycastAll(ray.origin, ray.direction, 10.0f);
-            
+            hitObjectsZ = Physics.RaycastAll(ray.origin, ray.direction, 10.0f);
+            Debug.Log("↑" + x + ":" +hitObjectsZ.Length);
             // 1列揃っているなら
-            if (hitObjects.Length == 8)
+            if (hitObjectsZ.Length == 8)
             {
-                foreach (RaycastHit hit in hitObjects)
+                foreach (RaycastHit hit in hitObjectsZ)
                 {
                     Destroy(hit.collider.gameObject);
                 }
             }
         }
-        // X軸方向
+        // →方向
         for (int z = 0; z < 8; z++)
         {
             ray = new Ray(new Vector3(-1, 0.5f, 0.5f + z), new Vector3(1, 0));
             // 可視光線（始点：盤の左列、色：緑）
             Debug.DrawRay(ray.origin, ray.direction * 10, Color.green, 5);
             
-            hitObjects = Physics.RaycastAll(ray.origin, ray.direction, 10.0f);
+            hitObjectsX = Physics.RaycastAll(ray.origin, ray.direction, 10.0f);
+            Debug.Log("→" + z + ":" + hitObjectsX.Length);
             // 1列揃っているなら
-            if (hitObjects.Length == 8)
+            if (hitObjectsX.Length == 8)
             {
-                foreach (RaycastHit hit in hitObjects)
+                foreach (RaycastHit hit in hitObjectsX)
                 {
                     Destroy(hit.collider.gameObject);
                 }
             }
         }
+
+        putCheck = 0;
     }
 
     /// <summary>
@@ -377,8 +392,12 @@ public class Master : MonoBehaviour
                 if (hitObject.collider.gameObject.tag == "Parts")
                 {
                     board[z][x] = true;
-                    Debug.Log(z + ":" + x + " " + board[z][x]);
-                }               
+                    //Debug.Log(z + ":" + x + " " + board[z][x]);
+                }
+                else if (hitObject.collider.gameObject.layer == boardLayerIndex)
+                {
+                    board[z][x] = false;
+                }
 
                 x++;
             }
