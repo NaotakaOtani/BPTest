@@ -18,6 +18,8 @@ public class Master : MonoBehaviour
     public Transform[] Frame;
     // ブロック用配列
     public Transform[] Blocks;
+    // 子オブジェクト用 (2019/06/20/11:47)
+    private Transform[] childTransforms;
     // 乱数
     int ran;
     // 使用済みブロック数
@@ -268,7 +270,7 @@ public class Master : MonoBehaviour
     private void fixation()
     {
         // 子オブジェクトのTransformを取得する。（親含む）
-        Transform[] childTransforms = hitBlock.collider.gameObject.GetComponentsInChildren<Transform>();
+        childTransforms = hitBlock.collider.gameObject.GetComponentsInChildren<Transform>();
         // カウント：光線による盤Objectに衝突した子オブジェクト数
         int count = 0;
 
