@@ -151,7 +151,7 @@ public class Master : MonoBehaviour
 
             // 求めた座標をそれぞれ代入
             float x = Blocks[ran].position.x;
-            float y = 0;          
+            float y = 0.5f;          
             float z = Blocks[ran].position.z;
             // ブロックを生成
             Instantiate(Blocks[ran].gameObject, new Vector3(x, y, z), transform.rotation);
