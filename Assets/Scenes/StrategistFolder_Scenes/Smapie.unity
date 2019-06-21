@@ -3834,7 +3834,7 @@ MonoBehaviour:
   - {fileID: 181013233}
   - {fileID: 117996767}
   - {fileID: 587192551}
-  Blocks:
+  prefabBlocks:
   - {fileID: 6460178360232245921, guid: 47b7c41f267ea904eb4a1a23ae19d2b3, type: 3}
   - {fileID: 604789266149070414, guid: 331bc45b84c5f844091fc8cdebd084d1, type: 3}
   - {fileID: 4634433483721836798, guid: 7e7fd88af0cddc04f8a8ac16b8e21ae9, type: 3}

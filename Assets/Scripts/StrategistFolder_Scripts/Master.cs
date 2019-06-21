@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -17,7 +18,7 @@ public class Master : MonoBehaviour
     // ブロック生成位置
     public Transform[] Frame;
     // ブロック用配列
-    public Transform[] Blocks;
+    public Transform[] prefabBlocks;
     // 子オブジェクト用 (2019/06/20/11:47)
     private Transform[] childTransforms;
     // 乱数
@@ -57,7 +58,7 @@ public class Master : MonoBehaviour
         }
 
         
-        blockInfomation();
+        blockInit();
 
         generate();
     }
@@ -107,23 +108,24 @@ public class Master : MonoBehaviour
         for (int i = 0; i < 3; i++)
         {            
             // 乱数生成
-            ran = Random.Range(0, Blocks.Length);
+            ran = UnityEngine.Random.Range(0, prefabBlocks.Length);
+            Debug.Log("ran:" + ran);
 
             // Center座標を求める
-            Vector3 BlockCenterPos = GetCenterPosition(Blocks[ran]);
+            Vector3 BlockCenterPos = GetCenterPosition(prefabBlocks[ran]);
             
             // humanをどれだけ動かすと、Pivotの位置にCenterを持ってこられるか求める
-            Vector3 centerDis = Blocks[ran].position - BlockCenterPos;
+            Vector3 centerDis = prefabBlocks[ran].position - BlockCenterPos;
 
             // frameの座標と、humanのPivotとCenterの位置の差を足せば完了
-            Blocks[ran].position = Frame[i].position + centerDis;
+            prefabBlocks[ran].position = Frame[i].position + centerDis;
 
             // 求めた座標をそれぞれ代入
-            float x = Blocks[ran].position.x;
+            float x = prefabBlocks[ran].position.x;
             float y = 0.5f;          
-            float z = Blocks[ran].position.z;
+            float z = prefabBlocks[ran].position.z;
             // ブロックを生成
-            Instantiate(Blocks[ran].gameObject, new Vector3(x, y, z), transform.rotation);
+            Instantiate(prefabBlocks[ran].gameObject, new Vector3(x, y, z), transform.rotation);
         }
     }
 
@@ -410,8 +412,63 @@ public class Master : MonoBehaviour
     /// <summary>
     /// 各ブロック情報 初期値
     /// </summary>
-    private void blockInfomation()
+    private void blockInit()
     {
-       
+        Debug.Log("PrefabCount:" + prefabBlocks.Length);
+        for (int i = 0; i < prefabBlocks.Length; i++)
+        {
+            childTransforms = prefabBlocks[i].gameObject.GetComponentsInChildren < Transform>();
+
+            blocks.Add(new bool[(int)childTransforms[0].GetComponent<BoxCollider>().size.x, (int)childTransforms[0].GetComponent<BoxCollider>().size.z]);
+
+            foreach (Transform ct in childTransforms.Skip(1))
+            {
+                int x = 0, z = 0;
+                
+
+                Debug.Log(ct.position.x + ":" + ct.position.z);
+
+                if (ct.position.x != 0.0f)
+                {
+                    x = (int)Math.Ceiling(ct.position.x + 0.5f);
+                }
+
+                if (ct.position.z != 0.0f)
+                {
+                    z = (int)Math.Ceiling(ct.position.z + 0.5f);
+                }
+
+                Debug.Log(x + ":" + z);
+
+                blocks[i][x, z] = true;
+
+            }
+
+        }
+
+
+        Debug.Log("--------------------");
+
+        // 確認
+        for (int i = 0; i < blocks.Count; i++)
+        {
+            for (int j = 0; j < blocks[i].GetLength(0); j++)
+            {
+                for (int k = 0; k < blocks[i].GetLength(1); k++)
+                {
+                    Debug.Log(i + ":" + blocks[i][j, k]);
+                }
+            }
+        }
+
+        Debug.Log("---------- FIN ----------");
+    }
+
+    /// <summary>
+    /// 盤に現在のブロックを置ける空きがあるか
+    /// </summary>
+    private void canPutBlock()
+    {
+
     }
 }
