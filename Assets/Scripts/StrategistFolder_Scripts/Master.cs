@@ -6,6 +6,8 @@ using UnityEngine;
 
 public class Master : MonoBehaviour
 {
+    bool gameFlag = true;
+
     // 盤
     List<List<bool>> board = new List<List<bool>>();
     // 盤Size（8x8）
@@ -14,6 +16,8 @@ public class Master : MonoBehaviour
     // ブロックズ
     //List<List<bool>> blocks = new List<List<bool>>();
     List<bool[,]> blocks = new List<bool[,]>();
+    // ブロックの部品数
+    List<int> NumberOfPartsOfBlock = new List<int>();
 
     // ブロック生成位置
     public Transform[] Frame;
@@ -30,7 +34,7 @@ public class Master : MonoBehaviour
     int emptyCheck = 0;
     // ブロックを置いたか
     int putCheck = 0;
-    
+
     // Ray
     Ray ray;
     // Rayのアタリ判定
@@ -40,6 +44,11 @@ public class Master : MonoBehaviour
     private RaycastHit[] hitObjects, hitObjectsX, hitObjectsZ;
     // ブロックの初期位置の保存用
     private Vector3 initialPosition;
+
+    // ブロックの初期位置の状況
+    private bool[] StatusOfGenerationPlace = new bool[3];
+    // 生成されたブロック番号を保持
+    private int[] blockNumber = new int[3];
 
     // Layer(Board)
     private int boardLayerIndex;
@@ -57,7 +66,7 @@ public class Master : MonoBehaviour
             }
         }
 
-        
+
         blockInit();
 
         generate();
@@ -69,7 +78,40 @@ public class Master : MonoBehaviour
         if (emptyCheck == 1)
         {
             boardSituation();
+
+            // Debug(Board)
+            boardShow();
+
             emptyCheck = 0;
+
+            // 初期位置情報取得
+            GetUnusedBlocks();
+
+            // ブロックごとに置き場所が存在するかチェック
+            for (int i = 0; i < 3; i++)
+            {
+
+                // ブロックの生成位置にブロックを存在するとき
+                if (StatusOfGenerationPlace[i] == true)
+                {
+                    Debug.Log(blockNumber[i]);
+                    Debug.Log("return:" + canPutBlock(blockNumber[i]));
+
+                    // Debug(Block)
+                    blockShow(blockNumber[i]);
+
+                    gameFlag = canPutBlock(blockNumber[i]);
+
+                    // ゲーム終了
+                    if (gameFlag == false)
+                    {
+                        Debug.Log("---------- Game Over ----------");
+                        break;
+                    }
+                }
+            }
+            
+            
         }
 
         if (Input.GetMouseButtonDown(0))
@@ -86,7 +128,7 @@ public class Master : MonoBehaviour
             {
                 delete();
             }
-            
+
         }
         if (hitRay)
         {
@@ -97,6 +139,8 @@ public class Master : MonoBehaviour
             generate();
             alreadyUsedCount = 0;
         }
+
+        
     }
 
     /// <summary>
@@ -106,26 +150,34 @@ public class Master : MonoBehaviour
     {
         // ブロックの生成
         for (int i = 0; i < 3; i++)
-        {            
+        {
             // 乱数生成
             ran = UnityEngine.Random.Range(0, prefabBlocks.Length);
             Debug.Log("ran:" + ran);
+            // ブロック番号保存
+            blockNumber[i] = ran;
 
             // Center座標を求める
             Vector3 BlockCenterPos = GetCenterPosition(prefabBlocks[ran]);
-            
+
             // humanをどれだけ動かすと、Pivotの位置にCenterを持ってこられるか求める
             Vector3 centerDis = prefabBlocks[ran].position - BlockCenterPos;
+            // ブロックのインスタンスを生成
+            Transform pb = Instantiate(prefabBlocks[ran].gameObject.transform);
 
             // frameの座標と、humanのPivotとCenterの位置の差を足せば完了
-            prefabBlocks[ran].position = Frame[i].position + centerDis;
+            pb.position = Frame[i].position + centerDis;
 
             // 求めた座標をそれぞれ代入
             float x = prefabBlocks[ran].position.x;
-            float y = 0.5f;          
+            float y = 0.5f;
             float z = prefabBlocks[ran].position.z;
-            // ブロックを生成
-            Instantiate(prefabBlocks[ran].gameObject, new Vector3(x, y, z), transform.rotation);
+
+            pb.position += new Vector3(x, y, z);
+
+            //b.transform.position += new Vector3(x, y, z); 
+
+            //Instantiate(prefabBlocks[ran].gameObject, new Vector3(x, y, z), transform.rotation);
         }
     }
 
@@ -206,7 +258,7 @@ public class Master : MonoBehaviour
             if (maxPos.y < center.y + size.y) maxPos.y = center.y + size.y;
             if (maxPos.z < center.z + size.z) maxPos.z = center.z + size.z;
         }
-        
+
         // 対角線の中心
         return (minPos + maxPos) / 2;
     }
@@ -223,7 +275,7 @@ public class Master : MonoBehaviour
         if (Physics.Raycast(ray.origin, ray.direction, out hitBlock, 20.0f, LayerMask.GetMask("Block")))
         {
             hitRay = true;
-            
+
             initialPosition = hitBlock.collider.gameObject.transform.position;
 
             // ブロックの拡大
@@ -255,11 +307,11 @@ public class Master : MonoBehaviour
             // Layer：10
             boardLayerIndex = LayerMask.NameToLayer("Board");
 
-            
+
 
             foreach (RaycastHit hitObject in hitObjects)
             {
-                
+
                 // 盤上であるとき
                 if (hitObject.collider.gameObject.layer == boardLayerIndex)
                 {
@@ -324,9 +376,9 @@ public class Master : MonoBehaviour
             ray = new Ray(new Vector3(0.5f + x, 0.5f, -1), new Vector3(0, 0, 1));
             // 可視光線（始点：盤の下列、色：緑）
             Debug.DrawRay(ray.origin, ray.direction * 10, Color.green, 5);
-            
+
             hitObjectsZ = Physics.RaycastAll(ray.origin, ray.direction, 10.0f);
-            Debug.Log("↑" + x + ":" +hitObjectsZ.Length);
+            //Debug.Log("↑" + x + ":" + hitObjectsZ.Length);
             // 1列揃っているなら
             if (hitObjectsZ.Length == 8)
             {
@@ -342,9 +394,9 @@ public class Master : MonoBehaviour
             ray = new Ray(new Vector3(-1, 0.5f, 0.5f + z), new Vector3(1, 0));
             // 可視光線（始点：盤の左列、色：緑）
             Debug.DrawRay(ray.origin, ray.direction * 10, Color.green, 5);
-            
+
             hitObjectsX = Physics.RaycastAll(ray.origin, ray.direction, 10.0f);
-            Debug.Log("→" + z + ":" + hitObjectsX.Length);
+            //Debug.Log("→" + z + ":" + hitObjectsX.Length);
             // 1列揃っているなら
             if (hitObjectsX.Length == 8)
             {
@@ -417,14 +469,19 @@ public class Master : MonoBehaviour
         Debug.Log("PrefabCount:" + prefabBlocks.Length);
         for (int i = 0; i < prefabBlocks.Length; i++)
         {
-            childTransforms = prefabBlocks[i].gameObject.GetComponentsInChildren < Transform>();
+            childTransforms = prefabBlocks[i].gameObject.GetComponentsInChildren<Transform>();
 
             blocks.Add(new bool[(int)childTransforms[0].GetComponent<BoxCollider>().size.x, (int)childTransforms[0].GetComponent<BoxCollider>().size.z]);
 
+            Debug.Log("C.Length:" + (childTransforms.Length - 1));          
+            
+            // ブロックごとの部品数を保持する
+            NumberOfPartsOfBlock.Add(childTransforms.Length - 1);
+            // 親Objectを除いて子オブジェクト
             foreach (Transform ct in childTransforms.Skip(1))
             {
                 int x = 0, z = 0;
-                
+
 
                 Debug.Log(ct.position.x + ":" + ct.position.z);
 
@@ -439,7 +496,7 @@ public class Master : MonoBehaviour
                 }
 
                 Debug.Log(x + ":" + z);
-
+                // ブロックがある
                 blocks[i][x, z] = true;
 
             }
@@ -467,8 +524,114 @@ public class Master : MonoBehaviour
     /// <summary>
     /// 盤に現在のブロックを置ける空きがあるか
     /// </summary>
-    private void canPutBlock()
+    private bool canPutBlock(int bNum)
     {
 
+
+        int count = 0;
+
+
+        for (int i = 0; i < boardSize - blocks[bNum].GetLength(0) + 1; i++)
+        {
+            for (int j = 0; j < boardSize - blocks[bNum].GetLength(1) + 1; j++)
+            {
+                for (int z = 0; z < blocks[bNum].GetLength(1); z++)
+                {
+                    for (int x = 0; x < blocks[bNum].GetLength(0); x++)
+                    {
+                        if (blocks[bNum][x, z] == false)
+                        {
+                            continue;
+                        }
+                        else if (board[i + z][j + x] == false)
+                        {
+                            count++;
+                        }
+
+                        if (count == NumberOfPartsOfBlock[bNum])
+                        {
+                            return true;
+                        }
+                    }
+                    
+                }
+                
+            }
+           
+        }
+
+        return false;
+
     }
+
+    /// <summary>
+    /// ブロックの使用状況を調べる
+    /// </summary>
+    private void GetUnusedBlocks()
+    {
+        int plus = 0;
+
+        for (int i = 0; i < 3; i++)
+        {
+            // ３つの生成場所に光線を撃ち、未使用ならtrue 使用済みならfalse
+            ray = new Ray(new Vector3(1 + plus, 2f, -3), new Vector3(0, -1, 0));
+            Debug.DrawRay(ray.origin, ray.direction * 2, Color.white, 5);
+            plus += 3;
+            if (Physics.Raycast(ray.origin, ray.direction, out hitBlock, 5.0f, LayerMask.GetMask("Block")))
+            {
+                StatusOfGenerationPlace[i] = true;
+            }
+            else
+            {
+                StatusOfGenerationPlace[i] = false;
+            }
+            Debug.Log("Frame"  + i + ":" + StatusOfGenerationPlace[i]);
+        }
+        
+    }
+
+    private void boardShow()
+    {
+        String s = "";
+
+        for (int z = boardSize -1; z >= 0; z--)
+        {
+            for (int x = 0; x < boardSize; x++)
+            {
+                s += board[z][x] + ",";
+            }
+            s += "\r\n";
+        }
+        Debug.Log(s);
+    }
+
+    private void blockShow(int bNum)
+    {
+        // 2019 06 24 ブロック初期化後　全情報を表示してみる
+
+        String s = "";
+
+        Debug.Log("z:x = " + blocks[bNum].GetLength(1) + ":" + blocks[bNum].GetLength(0));
+        Debug.Log("bNum:" + bNum);
+
+        for (int z = blocks[bNum].GetLength(1) - 1; z >= 0; z--)
+        {
+            for (int x = 0; x < blocks[bNum].GetLength(0); x++)
+            {
+                Debug.Log("z:x = " + z + ":" + x);
+                if (blocks[bNum][0,0])
+                {
+                    s += blocks[bNum][z, x] + ", ";
+                }
+                else
+                {
+                    Debug.Log("ない");
+                }
+                
+            }
+            s += "\r\n";
+        }
+        Debug.Log(s);
+    }
+
 }
