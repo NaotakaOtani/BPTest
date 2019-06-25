@@ -97,9 +97,6 @@ public class Master : MonoBehaviour
                     Debug.Log(blockNumber[i]);
                     Debug.Log("return:" + canPutBlock(blockNumber[i]));
 
-                    // Debug(Block)
-                    blockShow(blockNumber[i]);
-
                     gameFlag = canPutBlock(blockNumber[i]);
 
                     // ゲーム終了
@@ -470,36 +467,43 @@ public class Master : MonoBehaviour
         for (int i = 0; i < prefabBlocks.Length; i++)
         {
             childTransforms = prefabBlocks[i].gameObject.GetComponentsInChildren<Transform>();
-
+            //Debug.Log(childTransforms[0].GetComponent<BoxCollider>().size.x + ":" + childTransforms[0].GetComponent<BoxCollider>().size.z);
             blocks.Add(new bool[(int)childTransforms[0].GetComponent<BoxCollider>().size.x, (int)childTransforms[0].GetComponent<BoxCollider>().size.z]);
 
-            Debug.Log("C.Length:" + (childTransforms.Length - 1));          
+            //Debug.Log("C.Length:" + (childTransforms.Length - 1));          
             
+            for (int x = 0; x < blocks[i].GetLength(0); x++)
+            {
+                for (int z = 0; z < blocks[i].GetLength(1); z++)
+                {
+                    blocks[i][x, z] = false;
+                }
+            }
+
+
             // ブロックごとの部品数を保持する
             NumberOfPartsOfBlock.Add(childTransforms.Length - 1);
+            Debug.Log(i +":"+ NumberOfPartsOfBlock[i]);
             // 親Objectを除いて子オブジェクト
             foreach (Transform ct in childTransforms.Skip(1))
             {
                 int x = 0, z = 0;
 
 
-                Debug.Log(ct.position.x + ":" + ct.position.z);
+                //Debug.Log(i + "-" + ct.position.x + ":" + ct.position.z);               
 
-                if (ct.position.x != 0.0f)
-                {
-                    x = (int)Math.Ceiling(ct.position.x + 0.5f);
-                }
+                x = (int)(ct.position.x * 2);
+                z = (int)(ct.position.z * 2);
 
-                if (ct.position.z != 0.0f)
-                {
-                    z = (int)Math.Ceiling(ct.position.z + 0.5f);
-                }
 
-                Debug.Log(x + ":" + z);
+                //Debug.Log(i + "-" + x + ":" + z);
                 // ブロックがある
                 blocks[i][x, z] = true;
+                //Debug.Log(i + "-" + x + ":" + z + ":" + blocks[i][x,z]);
 
             }
+
+           
 
         }
 
@@ -509,13 +513,7 @@ public class Master : MonoBehaviour
         // 確認
         for (int i = 0; i < blocks.Count; i++)
         {
-            for (int j = 0; j < blocks[i].GetLength(0); j++)
-            {
-                for (int k = 0; k < blocks[i].GetLength(1); k++)
-                {
-                    Debug.Log(i + ":" + blocks[i][j, k]);
-                }
-            }
+           //Debug.Log(i + ":" + blockShow(i));
         }
 
         Debug.Log("---------- FIN ----------");
@@ -530,36 +528,42 @@ public class Master : MonoBehaviour
 
         int count = 0;
 
-
-        for (int i = 0; i < boardSize - blocks[bNum].GetLength(0) + 1; i++)
-        {
-            for (int j = 0; j < boardSize - blocks[bNum].GetLength(1) + 1; j++)
-            {
+        // 盤のZ軸方向
+        for (int i = 0; i < boardSize - blocks[bNum].GetLength(1) + 1; i++)
+        {   // 盤のX軸方向
+            for (int j = 0; j < boardSize - blocks[bNum].GetLength(0) + 1; j++)
+            {   // ブロックのZ軸方向
                 for (int z = 0; z < blocks[bNum].GetLength(1); z++)
-                {
+                {   // ブロックのX軸方向
                     for (int x = 0; x < blocks[bNum].GetLength(0); x++)
                     {
+                        // ブロックの x * z の範囲のうちブロックのない場所なら処理を飛ばす
                         if (blocks[bNum][x, z] == false)
                         {
+                            //Debug.Log("飛ばす");
                             continue;
-                        }
+                        }  
+                        // 盤の指定した１マスにブロックが存在しないなら
                         else if (board[i + z][j + x] == false)
                         {
                             count++;
+                            //Debug.Log("count:" + count);
                         }
-
+                        // 指定したブロックのパーツ数とカウントした数が一緒なら
                         if (count == NumberOfPartsOfBlock[bNum])
                         {
+                            //Debug.Log("TRUE");
                             return true;
                         }
                     }
+                    count = 0;
                     
                 }
                 
             }
            
         }
-
+        //Debug.Log("FALSE");
         return false;
 
     }
@@ -605,33 +609,24 @@ public class Master : MonoBehaviour
         Debug.Log(s);
     }
 
-    private void blockShow(int bNum)
+    private String blockShow(int i)
     {
         // 2019 06 24 ブロック初期化後　全情報を表示してみる
 
         String s = "";
 
-        Debug.Log("z:x = " + blocks[bNum].GetLength(1) + ":" + blocks[bNum].GetLength(0));
-        Debug.Log("bNum:" + bNum);
-
-        for (int z = blocks[bNum].GetLength(1) - 1; z >= 0; z--)
+        
+        for (int x = 0; x < blocks[i].GetLength(0); x++)
         {
-            for (int x = 0; x < blocks[bNum].GetLength(0); x++)
+            for (int z = 0; z < blocks[i].GetLength(1); z++)
             {
-                Debug.Log("z:x = " + z + ":" + x);
-                if (blocks[bNum][0,0])
-                {
-                    s += blocks[bNum][z, x] + ", ";
-                }
-                else
-                {
-                    Debug.Log("ない");
-                }
-                
+                s += blocks[i][x,  z];
             }
             s += "\r\n";
         }
-        Debug.Log(s);
+
+
+        return s;
     }
 
 }
